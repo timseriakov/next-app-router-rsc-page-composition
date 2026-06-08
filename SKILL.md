@@ -4,13 +4,14 @@ description: Design, review, and refactor React Server Component architecture in
 metadata:
   author: Tim Seriakov
   source: Aurora Scharff, Component Architecture for React Server Components
+  source_url: https://aurorascharff.no/posts/component-architecture-for-react-server-components/
 ---
 
 # Next.js App Router RSC Page Composition
 
 Design the route as a composition shell, push reads into the components that own them, and make the loading experience explicit.
 
-Skill author: Tim. Source basis: this skill operationalizes Aurora Scharff’s experience and blog post “Component Architecture for React Server Components” into a review and refactoring workflow for Next.js App Router applications. Keep the article attribution visible because the architectural stance comes from that work, even though this OpenCode skill is authored separately.
+Source basis: this skill operationalizes Aurora Scharff’s experience and blog post “Component Architecture for React Server Components” into a review and refactoring workflow for Next.js App Router applications. Keep the article attribution visible because the architectural stance comes from that work, even though this OpenCode skill is authored separately.
 
 ## When to Apply
 

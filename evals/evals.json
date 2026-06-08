@@ -7,7 +7,7 @@
       "prompt": "Review this Next.js App Router route architecture. The page at app/dashboard/page.tsx is async, fetches user, metrics, notifications, and marketing recommendations at the top, then passes all results through props into child components. Only auth must block the route; the other regions can load independently. Recommend a refactor using React Server Components, Suspense, skeletons, and scoped error handling without replacing the project's existing data layer.",
       "expected_output": "Classifies the route as a loader-style async page, keeps only auth/gating at route level, moves region-specific reads into async Server Components, adds meaningful Suspense boundaries with colocated skeletons, scopes errors by region, and preserves existing data tooling.",
       "files": [],
-      "assertions": [
+      "expectations": [
         "Uses the strict eight-section output contract or explicitly marks empty sections as Not applicable.",
         "Recommends a synchronous route compositor unless route-level auth/gating requires async work.",
         "Moves metrics, notifications, and recommendations reads into owning async Server Component regions.",
@@ -21,7 +21,7 @@
       "prompt": "We are on Next.js 15. In app/products/[slug]/page.tsx, params is typed as Promise<{ slug: string }>. The current page is async only to await params and then fetch product, reviews, and related products before rendering. How should we restructure it so the page remains a composition shell while product regions own their data? Include guidance for params/searchParams promises.",
       "expected_output": "Uses Next.js 15 thenable route prop guidance, considers params.then(...) to derive slug promises without making the page a loader, passes minimal typed promises/IDs to async regions, and separates independently loading product/reviews/related regions behind Suspense where appropriate.",
       "files": [],
-      "assertions": [
+      "expectations": [
         "Explicitly notes Next.js 15 params/searchParams can be promise-like and should be typed accordingly.",
         "Considers params.then(...) as a way to keep the page synchronous.",
         "Avoids centralizing product, reviews, and related-products fetching in the page when regions can own reads.",
@@ -35,7 +35,7 @@
       "prompt": "A Next.js App Router analytics page uses TanStack Query in a Client Component for live filters, polling, user-triggered refresh, and optimistic edits. Another agent suggested deleting React Query because Server Components can fetch on the server. Review the architecture and recommend what should stay client-managed versus what could move to server-rendered RSC regions.",
       "expected_output": "Rejects RSC absolutism, preserves intentional TanStack Query usage for live/user-driven/polling/optimistic flows, identifies any server-renderable static initial regions separately, and keeps client leaves/wrappers focused on interactivity.",
       "files": [],
-      "assertions": [
+      "expectations": [
         "Preserves TanStack Query where it supports live, user-driven, polling, or optimistic UX.",
         "Does not claim React Query/TanStack Query is obsolete because RSC exists.",
         "Separates server-renderable initial/static reads from intentionally client-managed data.",
@@ -49,7 +49,7 @@
       "prompt": "In app/settings/page.tsx the entire settings page has 'use client' because one nested SaveButton uses click handlers and useOptimistic. The page also imports server-only account and billing helpers indirectly. Recommend a safer RSC architecture with Server Components and a client leaf while preserving optimistic UX.",
       "expected_output": "Identifies client boundary creep, moves server reads back to Server Components, extracts the interactive SaveButton/form behavior into a Client Component leaf, keeps props serializable/minimal, uses Server Functions/actions where supported, and preserves useOptimistic for immediate feedback.",
       "files": [],
-      "assertions": [
+      "expectations": [
         "Flags the whole-page 'use client' as client boundary creep.",
         "Moves account and billing server reads into Server Components or server helpers, not Client Components.",
         "Extracts the interactive SaveButton/form behavior into a small Client Component leaf or wrapper.",
@@ -63,7 +63,7 @@
       "prompt": "Review a route where an async Server Component renders 80 ProductCard components. Each ProductCard calls getProduct(id), wrapped in React cache(). The team believes cache() batches the product lookups. Explain the architectural problem and recommend an RSC-friendly data ownership and loading plan.",
       "expected_output": "Explains that React cache() dedupes identical calls but does not batch many distinct IDs, recommends bulk reads/joins/dataloaders/API batching/precomputed read models for many IDs, and keeps RSC ownership/loading boundaries meaningful without creating waterfalls.",
       "files": [],
-      "assertions": [
+      "expectations": [
         "States that React cache() dedupes identical calls within a request scope but does not batch different IDs.",
         "Recommends batching, bulk reads, joins, dataloaders, API batching, or precomputed read models for many distinct IDs.",
         "Considers whether the product list region should own a bulk read rather than each card causing N+1 reads.",
@@ -77,7 +77,7 @@
       "prompt": "We are upgrading to Next.js 16 with cacheComponents. A marketing route has a mostly static shell, but a personalized recommendations panel reads cookies and user-specific data. The current implementation awaits the personalized read in page.tsx before rendering anything. Recommend a page composition that preserves the static shell and gives the dynamic panel a good loading and error experience.",
       "expected_output": "Checks Next.js 16/cacheComponents implications, keeps the static shell synchronous when possible, moves personalized dynamic reads into an async region behind meaningful Suspense, adds colocated skeleton/error handling, and avoids unscoped dynamic reads that make the whole route dynamic unless intended.",
       "files": [],
-      "assertions": [
+      "expectations": [
         "Explicitly discusses Next.js 16 cacheComponents/static shell versus dynamic region implications.",
         "Recommends preserving the static shell instead of blocking it on personalized data.",
         "Moves cookie/user-specific recommendations into an async Server Component region behind Suspense.",
