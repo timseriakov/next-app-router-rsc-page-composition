@@ -1,0 +1,12 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Local assistant/runtime state
+.sisyphus/
+
+# Generated eval and review artifacts
+iteration-*/
+
+# Local packaged skill artifacts from skill-creator
+.agents/skills/skill-creator/*.skill
