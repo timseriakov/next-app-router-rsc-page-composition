@@ -1,6 +1,6 @@
 # Next.js App Router RSC Page Composition
 
-An OpenCode skill for reviewing and refactoring React Server Component architecture in Next.js App Router applications.
+A reusable agent skill for reviewing and refactoring React Server Component architecture in Next.js App Router applications.
 
 The skill helps an assistant turn loader-style routes into composition-oriented pages: keep the route shell focused on layout, loading, and error topology; move server reads into the regions that own them; push client boundaries down to leaves; and preserve intentional client data/cache tooling when it is the right tool for the UX.
 
@@ -90,7 +90,7 @@ This skill operationalizes ideas from Aurora Scharff’s React Server Component 
 - [Component Architecture for React Server Components](https://aurorascharff.no/posts/component-architecture-for-react-server-components/)
 - [Server and Client Component Composition in Practice](https://aurorascharff.no/posts/server-and-client-component-composition-in-practice/)
 
-The OpenCode skill package is authored separately by Tim Seriakov.
+Adaptation and packaging by Tim Seriakov; the skill is intended to be reusable across compatible agent harnesses.
 
 ## Development notes
 
