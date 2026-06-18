@@ -84,6 +84,49 @@
         "Adds a region-specific skeleton and scoped error/recovery behavior for the personalized panel.",
         "Warns against one unscoped dynamic read pulling the whole route into dynamic rendering unless intended."
       ]
+    },
+    {
+      "id": 6,
+      "name": "swr-catalog-category-client-cache-preservation",
+      "prompt": "Review app/catalog/[category] in a Next.js App Router fixture. params is typed as Promise<{ category: string }>. The route has server-owned catalog product regions and an InventoryBadgeClient that imports useSWR from swr, calls useSWR(`/api/inventory?category=${category}`, fetchInventory, { revalidateOnFocus: false }), supports browser refresh/filter state, and renders inventory cache status. Unknown categories should call notFound(). Another agent wants to replace the SWR leaf with a Server Component fetch because RSC can fetch data. Recommend the architecture.",
+      "expected_output": "Preserves the intentional SWR client cache leaf, keeps the route shell server-rendered and not route-wide client, handles promise params and category notFound with minimal blocking, keeps server-owned catalog reads in async regions, and provides evidence/validation for boundaries, cache ownership, and not-found behavior.",
+      "files": [],
+      "expectations": [
+        "Explicitly preserves SWR for browser-owned cache behavior such as refresh, focus/refetch, filters, validation state, or shared client cache.",
+        "Does not replace the SWR leaf with a Server Component read unless the user intentionally removes browser-owned behavior.",
+        "Keeps 'use client' limited to the inventory/cache leaf or wrapper, not the whole route.",
+        "Handles Promise-shaped params and category notFound without centralizing all region reads in page.tsx.",
+        "Maps server-owned catalog reads to owning async Server Component regions with Suspense and failure recovery.",
+        "Includes concrete evidence and validation checks for SWR preservation, route boundaries, notFound, and e2e behavior."
+      ]
+    },
+    {
+      "id": 7,
+      "name": "next16-cache-directives-marketing-copy",
+      "prompt": "A Next.js 16 app has cacheComponents: true. app/marketing has a static hero copy helper and a separate uncached pricing/personalization region. The team wants to use 'use cache', cacheTag('marketing-hero-copy'), and cacheLife('hours'), but is also passing user/request data through nearby regions. Review the architecture and recommend where cache directives belong.",
+      "expected_output": "Checks cacheComponents before recommending cache directives, puts 'use cache', cacheTag, and cacheLife only inside the genuinely cacheable server helper/component, keeps request-specific or personalized reads outside the cached scope behind Suspense, and avoids decorative or unsafe caching.",
+      "files": [],
+      "expectations": [
+        "Verifies or asks to verify cacheComponents: true before relying on Next.js 16 cache directives.",
+        "Imports cacheLife/cacheTag from next/cache and places them inside a cached server scope with 'use cache'.",
+        "Keeps cookies, request-specific values, runtime promises, and browser-owned filters out of shared cached scopes.",
+        "Preserves a static shell while isolating uncached dynamic regions behind meaningful Suspense and recovery UI.",
+        "Does not conflate React cache() request dedupe with Next.js cache directives or batching."
+      ]
+    },
+    {
+      "id": 8,
+      "name": "nested-error-domains-and-evidence",
+      "prompt": "A dashboard/analytics route has independent summary, chart, notifications, and recommendations regions. The fixture exposes SCENARIO_FAIL_REGION, SCENARIO_SLOW_REGION, SCENARIO_FORCE_NOT_FOUND, and SCENARIO_LATENCY_MS. The current refactor adds a single route-level error.tsx and a generic loading.tsx but no local Suspense, scoped fallbacks, or proof that one region failure leaves the rest of the route usable. Review the topology and required evidence.",
+      "expected_output": "Requires meaningful local Suspense and scoped recovery for independent regions, distinguishes route identity notFound from recoverable region failures, preserves static shell content during slow regions, and demands concrete validation evidence such as tests, traces, screenshots, or route-event logs.",
+      "files": [],
+      "expectations": [
+        "Rejects a single all-page fallback/error boundary as sufficient for independently failing regions.",
+        "Pairs each independently slow region with a shape-matched fallback and scoped failure behavior.",
+        "Distinguishes notFound/redirect/auth route gates from optional region error recovery.",
+        "Preserves shell and unrelated regions when one region is slow or fails.",
+        "Asks for concrete evidence: validation commands, Playwright traces/screenshots, route-event logs, or targeted e2e assertions."
+      ]
     }
   ]
 }

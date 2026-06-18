@@ -184,6 +184,55 @@ function LiveAnalyticsPanel({ initialFilters }: { initialFilters: Filters }) {
 }
 ```
 
+SWR-specific shape:
+
+```tsx
+export default function CatalogCategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const categoryPromise = params.then(({ category }) => category)
+
+  return (
+    <main>
+      <CatalogShell />
+      <Suspense fallback={<InventorySkeleton />}>
+        <InventoryCacheRegion category={categoryPromise} />
+      </Suspense>
+    </main>
+  )
+}
+```
+
+```tsx
+async function InventoryCacheRegion({ category }: { category: Promise<string> }) {
+  const resolvedCategory = await category
+  const initialInventory = await getInitialInventory(resolvedCategory)
+
+  return (
+    <InventoryBadgeClient
+      category={resolvedCategory}
+      fallbackData={initialInventory}
+    />
+  )
+}
+```
+
+```tsx
+'use client'
+
+import useSWR from 'swr'
+
+function InventoryBadgeClient({ category, fallbackData }: Props) {
+  const { data, isLoading, isValidating, mutate } = useSWR(
+    `/api/inventory?category=${category}`,
+    fetchInventory,
+    { fallbackData, revalidateOnFocus: false, keepPreviousData: true },
+  )
+
+  // SWR remains because browser refresh, local filters, validation state, and cache updates are client-owned.
+}
+```
+
+Do not replace this leaf with a Server Component read unless the browser-owned cache behavior is intentionally removed by the user.
+
 ## 5. `cache()` Dedupe Is Not Batching
 
 Problem:
@@ -254,9 +303,49 @@ async function PersonalizedRecommendations() {
 }
 ```
 
+If the project is on Next.js 16 and `cacheComponents: true` is enabled, cache truly static server helpers explicitly:
+
+```tsx
+import { cacheLife, cacheTag } from 'next/cache'
+
+export async function getMarketingHeroCopy() {
+  'use cache'
+
+  cacheTag('marketing-hero-copy')
+  cacheLife('hours')
+
+  return getStaticMarketingCopy()
+}
+```
+
 Notes:
 
 - Keep static shell content outside unscoped dynamic reads.
 - Put personalized/dynamic data behind meaningful Suspense.
 - Add region-level skeleton and error recovery.
+- Use `'use cache'`, `cacheLife`, and `cacheTag` only inside cacheable server scopes after confirming `cacheComponents: true`.
+- Do not pass runtime promises, request-specific values, cookies, or browser-owned filter state into a shared cached scope.
 - Verify static/dynamic behavior under the project's Next.js version and `cacheComponents` settings.
+
+## 7. Nested Failure and Not Found Topology
+
+Identity failures are not the same as region failures.
+
+```tsx
+export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const slugPromise = params.then(({ slug }) => slug)
+
+  return (
+    <main>
+      <Suspense fallback={<SummarySkeleton />}>
+        <ProductSummaryRegion slug={slugPromise} />
+      </Suspense>
+      <Suspense fallback={<ReviewsSkeleton />}>
+        <ReviewsRegion slug={slugPromise} />
+      </Suspense>
+    </main>
+  )
+}
+```
+
+Use `notFound()` in the smallest route/region gate that proves the route identity is invalid. Use scoped error boundaries or recoverable region UI for failures in optional or independent regions. A reviews failure should not blank a valid product summary unless the product identity itself is invalid.

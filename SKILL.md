@@ -11,7 +11,7 @@ metadata:
 
 Design the route as a composition shell, push reads into the components that own them, and make the loading experience explicit.
 
-Source basis: this skill operationalizes Aurora Scharff’s experience and blog post “Component Architecture for React Server Components” into a review and refactoring workflow for Next.js App Router applications. Keep the article attribution visible because the architectural stance comes from that work, even though this OpenCode skill is authored separately.
+Source basis: this skill operationalizes Aurora Scharff’s experience and blog post “Component Architecture for React Server Components” into a review and refactoring workflow for Next.js App Router applications. Keep the article attribution visible because the architectural stance comes from that work, even though this reusable skill is authored separately.
 
 ## When to Apply
 
@@ -45,14 +45,16 @@ Read `references/architecture-rules.md` for the full decision rules, loading pol
 
 ## Quick Reference by Priority
 
-1. **Classify the route first.** Name the route compositor, async regions, client leaves/wrappers, skeletons, error scopes, data helpers, and actions.
-2. **Keep the shell synchronous unless the route itself must block.** Do not use async pages as convenient data loaders.
-3. **Move reads to the component that renders the region.** Pass IDs, filters, cursors, handles, small values, or typed thenables instead of large loader payloads.
-4. **Use Suspense as UX design.** Put boundaries around meaningful visible regions; colocate skeletons and match the fulfilled layout.
-5. **Push `'use client'` down.** Client Components should be leaves or wrappers, not whole-route regions by default.
-6. **Preserve intentional client data layers.** RSC does not make SWR/TanStack Query/Apollo/urql/Relay obsolete.
-7. **Treat `cache()` as dedupe, not batching.** For many different IDs, use batching, bulk reads, joins, dataloaders, API batching, or precomputed read models.
-8. **Check the Next.js version.** Do not assume sync `params`; explicitly evaluate `params.then(...)` and `cacheComponents` when relevant.
+1. Classify the route: static shell, dynamic server regions, client leaves, or intentional client cache islands.
+2. Keep `page.tsx`/layouts as synchronous composition shells unless route identity, redirect, auth, metadata, or `notFound()` truly requires blocking.
+3. Move each server read to the smallest owning async Server Component under a local `<Suspense>` boundary.
+4. Do not centralize independent reads in `page.tsx`; preserve region ownership and independent failure/loading behavior.
+5. Preserve browser-owned cache/data tools (SWR, TanStack Query, Apollo, Relay, custom hooks) when they power polling, focus/refetch, filters, optimistic updates, subscriptions, or shared client cache.
+6. Push `use client` down to tiny leaves and pass serializable props only.
+7. Treat `cache()` as request-scope dedupe for identical calls, not batching for many distinct IDs.
+8. For Next 15+, treat `params`/`searchParams` as promises; pass/await them deliberately instead of assuming synchronous props.
+9. For Next 16 `cacheComponents`, check `next.config.*` before recommending `'use cache'`, `cacheLife`, or `cacheTag`, and use those directives only inside cacheable scopes.
+10. Require evidence: changed files, boundary locations, validation commands, route behavior, preserved client cache tooling, and version assumptions.
 
 Read `references/boundaries-and-data.md` for server/client boundary rules, official Next/Vercel-style data pattern guidance, serializable props, repeated reads, mutations, and client cache preservation.
 
@@ -76,12 +78,11 @@ Follow this sequence when reviewing or refactoring a route:
    - existing Suspense/error topology
    - whether the page is a compositor or a loader page
 
-3. **Map reads to ownership**
-   - minimal read set per region
-   - whether data is fetched too high
-   - whether client management is intentional
-   - whether identical reads can be deduped
-   - whether many IDs create N+1 work
+3. **Map ownership and split route shape**
+   - map every read/mutation/cache path: source, frequency, owner, consumers, invalidation, and failure mode
+   - detect browser-owned cache signals explicitly: `useSWR`, `SWRConfig`, `fallbackData`, `mutate`, `refreshInterval`, focus/reconnect revalidation, filter-driven keys, TanStack/Apollo/Relay cache APIs, or custom subscription hooks
+   - split route shape into synchronous shell first, async Server Component regions second, and tiny Client leaves only where interaction/cache requires them
+   - apply version rules while splitting: Next 15 promise route props, Next 16 `cacheComponents`/cache directives, and older-version fallbacks
 
 4. **Design loading and failure together**
    - local Suspense versus route-segment `loading.tsx`

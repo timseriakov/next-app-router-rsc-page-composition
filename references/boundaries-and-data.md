@@ -115,6 +115,21 @@ RSC does not make client data tools obsolete. Preserve SWR, TanStack Query, Apol
 
 You may still move static initial reads server-side and seed or coordinate the client cache when useful. Separate initial render ownership from ongoing interaction ownership.
 
+## SWR Client Islands
+
+Treat SWR as an intentional browser-owned cache when the component uses `useSWR`, `useSWRInfinite`, `SWRConfig`, `fallbackData`, `mutate`, `refreshInterval`, focus/reconnect revalidation, filter-driven keys, or cache sharing across client interactions.
+
+Correct handling:
+
+- Keep the SWR-using component as a small `'use client'` leaf or wrapper.
+- Let Server Components pass only serializable seeds such as IDs, category slugs, filters, or `fallbackData`.
+- Preserve the SWR key and fetcher when the key encodes browser-owned filters, polling, or refresh behavior.
+- Use `SWRConfig` `fallback` or per-hook `fallbackData` when server-rendered initial data improves first paint without taking over ongoing client cache ownership.
+- Distinguish first load from background refresh: `isLoading` usually drives the initial skeleton; `isValidating` can drive subtle refresh UI.
+- Preserve `mutate` / `useSWRConfig` flows for optimistic updates or local cache invalidation.
+- Use `refreshInterval`, focus/reconnect revalidation, and `keepPreviousData` only where the UX needs them; do not delete them as “RSC cleanup.”
+
+Wrong refactor: replacing an inventory badge, live analytics panel, or filter-driven search island with a Server Component read while the UI still depends on browser refresh, focus refetch, or shared client cache.
 ## Repeated Reads and Many IDs
 
 React `cache()` dedupes identical calls during server rendering. It does not batch many different calls.

@@ -45,17 +45,52 @@ Apply the same caution to `searchParams`:
 - pass small typed values or promises to owning regions
 - avoid turning the page into a centralized query parser plus loader unless the route truly owns those decisions
 
-## Next.js 16: `cacheComponents`
+## Next.js 16: `cacheComponents`, `'use cache'`, `cacheLife`, `cacheTag`
 
-With `cacheComponents`, static shell versus dynamic region placement becomes more important.
+With `cacheComponents`, static shell versus dynamic region placement becomes more important, and cache directives become explicit opt-ins rather than generic performance decoration.
+
+First check `next.config.*`:
+
+```ts
+const nextConfig = {
+  cacheComponents: true,
+}
+
+export default nextConfig
+```
 
 Evaluate:
 
-- Which parts of the route can remain static or prerenderable?
-- Which reads use cookies, headers, request-specific data, uncached fetches, or other dynamic sources?
+- Is `cacheComponents: true` enabled before recommending cache directives?
+- Which parts of the route are static/cacheable copy or chrome?
+- Which reads use cookies, headers, request-specific data, uncached fetches, browser-owned filters, or other dynamic sources?
 - Can dynamic reads move behind meaningful Suspense boundaries?
 - Does an unscoped dynamic read in `page.tsx` accidentally make the whole route dynamic?
 - Do fallbacks preserve layout while dynamic regions stream?
+
+Use `'use cache'`, `cacheLife`, and `cacheTag` only inside genuinely cacheable Server Component or server-helper scopes:
+
+```tsx
+import { cacheLife, cacheTag } from 'next/cache'
+
+export async function getMarketingHeroCopy() {
+  'use cache'
+
+  cacheTag('marketing-hero-copy')
+  cacheLife('hours')
+
+  return getStaticMarketingCopy()
+}
+```
+
+Rules:
+
+- import `cacheLife` and `cacheTag` from `next/cache`
+- call `cacheLife(...)` and `cacheTag(...)` inside the cached scope
+- do not pass runtime promises, request-specific values, SWR state, cookies, or browser-owned filters into a shared `'use cache'` scope
+- keep uncached personalized/request-time regions outside the cached helper and behind their own Suspense boundary
+- use `'use cache: private'` or `'use cache: remote'` only when the project version and route context support them and the cache ownership is clear
+- do not use cache directives decoratively just to make a route look “Next 16 aware”
 
 Prefer preserving static shell content while wrapping personalized or dynamic regions locally:
 
@@ -72,7 +107,6 @@ export default function Page() {
   )
 }
 ```
-
 ## Unknown or Mixed Versions
 
 If the Next.js version cannot be inspected:

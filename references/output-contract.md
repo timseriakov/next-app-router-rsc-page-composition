@@ -32,14 +32,16 @@ When this skill is used, return the eight sections below in this exact order. If
 
 ## 5. Client Data/Cache Note
 - Existing client data tools:
-- What to preserve:
-- What can move server-side:
+- Browser-owned cache signals found (`useSWR`, `SWRConfig`, `fallbackData`, `mutate`, `refreshInterval`, focus/reconnect revalidation, filter-driven keys, TanStack/Apollo/Relay/custom cache APIs):
+- What to preserve as a Client leaf/wrapper:
+- What can move server-side or seed initial client cache:
 - Invalidation/mutation convention:
 
 ## 6. Next.js Version Notes
 - Detected Next.js version:
 - `params` / `searchParams` behavior:
-- `cacheComponents` implications:
+- `notFound`, redirect, auth, or metadata gates that justify route-level blocking:
+- `cacheComponents` / `'use cache'` / `cacheLife` / `cacheTag` implications:
 - Unknowns or caveats:
 
 ## 7. Recommended Changes
@@ -50,9 +52,10 @@ When this skill is used, return the eight sections below in this exact order. If
 ## 8. Validation Plan
 - Type/lint/build checks:
 - Runtime loading/streaming checks:
-- Error/recovery checks:
-- Data/query/cache checks:
+- Error/recovery/not-found checks:
+- Data/query/cache checks, including client-cache preservation:
 - Version-specific checks:
+- Evidence to capture:
 ```
 
 ## Validation Checklist
@@ -108,6 +111,15 @@ Use this checklist before finalizing recommendations.
 - Next.js 16 `cacheComponents`, dynamic data, Suspense, and static shell implications are considered.
 - Static shell prerendering is not accidentally defeated by unscoped dynamic reads.
 
+### Evidence Requirements
+
+- Cite files or components that prove the route shell stayed server-rendered and synchronous where intended.
+- Cite where each server read moved or remained, including owner region and Suspense boundary.
+- Cite where SWR/TanStack/Apollo/Relay/custom client cache tooling is preserved, including key/fetcher/invalidation behavior when relevant.
+- Cite route prop types or generated type evidence when `params` / `searchParams` are promise-shaped.
+- Cite `next.config.*` and cached helper/component code when recommending `cacheComponents`, `'use cache'`, `cacheLife`, or `cacheTag`.
+- Cite `not-found.tsx`, `error.tsx`, local error boundaries, failure knobs, traces, or screenshots when discussing recovery topology.
+- Include exact validation commands or explain why they cannot be run.
 ## Grading Cues for Evals
 
 A strong answer should:
@@ -118,6 +130,8 @@ A strong answer should:
 - explain loading topology as UX, not just performance
 - mention version caveats when `params`, `searchParams`, or `cacheComponents` appear
 - distinguish `cache()` dedupe from batching
+- preserve SWR or equivalent browser-owned cache islands when they encode polling, focus/refetch, filters, optimistic state, or shared client cache
+- check `cacheComponents: true` before recommending Next 16 cache directives and use `cacheLife`/`cacheTag` only inside cacheable scopes
 - recommend validation steps specific to architecture, loading, errors, data, and version behavior
 
 A weak answer often:
@@ -130,3 +144,7 @@ A weak answer often:
 - assumes sync route props without checking Next.js version
 - treats Server Actions as the default read mechanism
 - claims `cache()` batches different IDs
+- removes an SWR island or rewrites it as a Server Component while the UX still depends on browser refresh, focus refetch, filters, or shared client cache
+- recommends `'use cache'`, `cacheLife`, or `cacheTag` without checking `cacheComponents` or whether the scope is actually cacheable
+- treats `notFound`/redirect/auth gates as the same thing as region error recovery
+- gives no concrete evidence for boundaries, route prop versions, client cache preservation, or validation

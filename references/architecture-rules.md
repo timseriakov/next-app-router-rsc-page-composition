@@ -14,6 +14,17 @@ The route file should usually describe the loading experience, not gather every 
 | Data is live, user-driven, subscription-based, browser-dependent, or intentionally cache-managed client-side | Preserve the client data/cache tool |
 | Route must block for auth, redirect, notFound, metadata/compliance, or a truly shared route-wide read | Route-level async is justified |
 
+## Ownership Classification Table
+
+| Input / behavior | Correct owner | Composition rule |
+| --- | --- | --- |
+| Request-time server read for one route region | Async Server Component region | Put the read in that region and wrap it with local Suspense/error UI. |
+| Independent server reads for multiple regions | Multiple async Server Component regions | Do not centralize in `page.tsx`; each region owns its data and failure mode. |
+| Browser polling, focus/refetch, filter-driven keys, subscriptions, shared client cache | Tiny Client Component preserving SWR/TanStack/Apollo/Relay/custom hook | Server Components may seed serializable initial data, but the browser-owned cache stays client-side. |
+| Mutation form state or optimistic UI | Client leaf + Server Function/action or existing mutation library | Keep optimistic state and cache invalidation local to the client leaf/tooling. |
+| Route identity, auth gate, redirect, metadata, `notFound()` | Minimal blocking page/layout gate | Await only what is required to choose the route outcome; keep independent regions streaming. |
+| Static/cacheable copy under Next 16 `cacheComponents` | Cached Server Component/helper | Use `'use cache'`, `cacheLife`, and `cacheTag` only when `cacheComponents: true` is enabled and the scope is actually cacheable. |
+
 Do not turn a route into an async loader page just because several children need data. Extract the children into async regions and let the route compose those regions with loading and error boundaries.
 
 ## Route-Level Async Is Exceptional
@@ -43,6 +54,12 @@ Rules:
 - Make skeletons mirror the fulfilled component's layout to avoid drift and layout shift.
 - Pair loading and error decisions: if a region can load independently, decide whether it should also fail independently.
 
+### Failure and Not Found Topology
+
+- Treat `notFound()` as route identity control, not a generic region error boundary.
+- Invalid dynamic identity may justify a small blocking gate in `page.tsx`; unrelated region reads should still remain outside that gate.
+- Nested or independent regions need scoped fallback/error UI so one failed analytics/catalog/dashboard panel does not blank the whole route.
+- Segment `error.tsx` is useful as a last resort, but it does not replace local boundaries for independently loadable regions.
 ## Component Roles
 
 Classify components before recommending changes. A component may have secondary roles, but name a primary role first.
@@ -98,3 +115,6 @@ The useful grouping is conceptual, not mandatory naming. Keep the component, ske
 - **Unscoped Failure**: one secondary region failure breaks the whole route unnecessarily.
 - **Next Version Blindness**: assuming sync `params` or ignoring `cacheComponents` behavior.
 - **Feature Scatter**: component, skeleton, data helper, and action live far apart without project reason.
+- **Client Cache Erasure**: replacing SWR/TanStack/Apollo/Relay/custom cache islands with Server Component fetches when the UI still needs polling, focus/refetch, filters, optimistic updates, or shared browser cache.
+- **Decorative Cache Directives**: adding `'use cache'`, `cacheLife`, or `cacheTag` without `cacheComponents: true`, outside a cacheable scope, or around runtime/request-specific promises.
+- **Centralized Page Gate**: awaiting all route data in `page.tsx` just because one identity check or `notFound()` is needed.
