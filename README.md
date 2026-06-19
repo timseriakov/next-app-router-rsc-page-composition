@@ -64,29 +64,6 @@ When the skill is used for architecture review, it asks the assistant to answer 
 
 This keeps reviews specific, auditable, and less likely to collapse into generic “just use Server Components” advice.
 
-## Evaluation status
-
-The first evaluation pass covered six scenarios:
-
-- loader-style dashboard page to sync shell plus async regions
-- Next.js 15 promise-like `params` / `searchParams`
-- preserving intentional TanStack Query usage
-- extracting a client leaf from an overgrown `'use client'` page
-- React `cache()` dedupe vs batching for product cards
-- Next.js 16 `cacheComponents` static shell with a dynamic personalized region
-
-Synthetic iteration 1 benchmark summary:
-
-- With skill: 100% pass rate
-- Baseline: 93.3% pass rate
-- Main gains: strict architecture output contract and explicit Next.js 15 `params.then(...)` guidance
-
-Real-fixture follow-up status:
-
-- First real Next.js fixture benchmark was intentionally conservative and ended flat: baseline, with skill, and skill+ULW all scored 99/100 with zero critical violations.
-- That run showed useful structure and speed discipline, but did **not** prove quality uplift over a strong baseline.
-- A harder fixture wave now covers explicit SWR client-cache preservation, Next.js 16 `cacheComponents` / `'use cache'` / `cacheLife` / `cacheTag`, dynamic `/catalog/[category]` promise params, nested failure domains, and stronger evidence requirements.
-- The next controlled hard-wave benchmark should compare baseline, with skill, and with skill+ULW against that frozen fixture using the same prompt, model, validation commands, and scoring rubric.
 
 ## Attribution
 
